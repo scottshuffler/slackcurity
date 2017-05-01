@@ -9,39 +9,31 @@ from imgurpython import ImgurClient
 from os.path import join, dirname
 from dotenv import load_dotenv
 
+# Finds .env file and loads it
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
-# If you already have an access/refresh pair in hand
+# Sets up keys from the .env file
 client_id = os.environ.get("CLIENT_ID")
 client_secret = os.environ.get("CLIENT_SECRET")
 access_token = os.environ.get("ACCESS_TOKEN")
 refresh_token = os.environ.get("REFRESH_ID")
+bot_id = os.environ.get("BOT_ID")
+slack_secret = os.environ.get("SLACK_SECRET")
+AT_BOT = "<@" + bot_id + ">"
 
-from datetime import datetime
-
-album = None # You can also enter an album ID here
-image_path = 'Kitten.jpg'
-
-# Note since access tokens expire after an hour, only the refresh token is required (library handles autorefresh)
+# Set up imgue and slack clients
 client = ImgurClient(client_id, client_secret, access_token, refresh_token)
+slack_client = SlackClient(slack_secret)
 
+# Sets up AM2302 sensor
 sensor = Adafruit_DHT.AM2302
-
 pin = 4
 
-# starterbot's ID as an environment variable
-BOT_ID = os.environ.get("BOT_ID")
+# Valid commands
+COMMANDS = ['arm', 'disarm', 'temp', 'test', 'help']
 
-# constants
-AT_BOT = "<@" + BOT_ID + ">"
-EXAMPLE_COMMAND = "arm"
-COMMANDS = ['arm','disarm','temp','test','help']
-
-# instantiate Slack & Twilio clients
-slack_client = SlackClient(os.environ.get("SLACK_SECRET"))
-
-#armed_pid = -1
+armed_pid = -1
 
 def handle_command(command, channel):
     """
@@ -49,9 +41,7 @@ def handle_command(command, channel):
         are valid commands. If so, then acts on the commands. If not,
         returns back what it needs for clarification.
     """
-    response = "Not sure what you mean. Use the *" + EXAMPLE_COMMAND + \
-               "* command with numbers, delimited by spaces."
-    #if command.startswith(EXAMPLE_COMMAND):
+    response = "Not sure what you mean."
     if command in COMMANDS:
         if command.startswith('temp'):
             humidity, temperature = Adafruit_DHT.read_retry(sensor, pin)
@@ -63,36 +53,29 @@ def handle_command(command, channel):
         elif command.startswith('arm'):
             global armed_pid
             armed_pid = subprocess.Popen(['python', 'armed.py', ''], shell=False)
-            #proc = subprocess.Popen(["python", "armed.py"]) 
-            #armed_pid = proc.pid
-            #print(armed_pid)
             response = "Arming, will send images when motion is detected"
         elif command.startswith('disarm'):
             response = "Disarming"
             global armed_pid
-            print(armed_pid)
-            #os.killpg(armed_pid, signal.SIGTERM)
             armed_pid.terminate()
         elif command.startswith('test'):
             response = "Taking a test picture"
             date = time.strftime("%H-%M-%S")
-            filename = date+'.jpg'
-            #currTime = datetime.now().strftime("%Y-%m-%d-%H-%M-%S.jpg", gmtime())
+            filename = date + '.jpg'
             camera = PiCamera()
             camera.resolution = (1024, 768)
             camera.start_preview()
-            # Camera warm-up time
             sleep(2)
             camera.capture(filename)
             camera.close()
             image = client.upload_from_path(filename, config=None, anon=False)
             response += " " + image.get('link')
             os.remove(filename)
- 
+
         else:
             response = "List of commands: arm, disarm, temp, test_cam"
     slack_client.api_call("chat.postMessage", channel=channel,
-                          text=":robot_face: "+response, as_user=True,icon_emoji=':robot_face:')
+                          text=":robot_face: " + response, as_user=True, icon_emoji=':robot_face:')
 
 
 def parse_slack_output(slack_rtm_output):
@@ -105,14 +88,15 @@ def parse_slack_output(slack_rtm_output):
     if output_list and len(output_list) > 0:
         for output in output_list:
             if output and 'text' in output and AT_BOT in output['text']:
-                # return text after the @ mention, whitespace removed
                 return output['text'].split(AT_BOT)[1].strip().lower(), \
                        output['channel']
     return None, None
 
 
+# Look at messages from slack and parse for @slackbot
+# When found call handle_command
 if __name__ == "__main__":
-    READ_WEBSOCKET_DELAY = 1 # 1 second delay between reading from firehose
+    READ_WEBSOCKET_DELAY = 1
     if slack_client.rtm_connect():
         print("StarterBot connected and running!")
         while True:
