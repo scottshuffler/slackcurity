@@ -35,6 +35,7 @@ COMMANDS = ['arm', 'disarm', 'temp', 'test', 'help']
 
 armed_pid = -1
 
+
 def handle_command(command, channel):
     """
         Receives commands directed at the bot and determines if they
