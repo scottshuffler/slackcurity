@@ -6,11 +6,17 @@ from time import sleep
 from slackclient import SlackClient
 from picamera import PiCamera
 from imgurpython import ImgurClient
+from os.path import join, dirname
+from dotenv import load_dotenv
 
-client_id = ''
-client_secret = ''
-access_token = ''
-refresh_token = ''
+dotenv_path = join(dirname(__file__), '.env')
+load_dotenv(dotenv_path)
+
+# If you already have an access/refresh pair in hand
+client_id = os.environ.get("CLIENT_ID")
+client_secret = os.environ.get("CLIENT_SECRET")
+access_token = os.environ.get("ACCESS_TOKEN")
+refresh_token = os.environ.get("REFRESH_ID")
 
 from datetime import datetime
 
@@ -25,7 +31,7 @@ sensor = Adafruit_DHT.AM2302
 pin = 4
 
 # starterbot's ID as an environment variable
-BOT_ID = ''
+BOT_ID = os.environ.get("BOT_ID")
 
 # constants
 AT_BOT = "<@" + BOT_ID + ">"
@@ -33,7 +39,7 @@ EXAMPLE_COMMAND = "arm"
 COMMANDS = ['arm','disarm','temp','test','help']
 
 # instantiate Slack & Twilio clients
-slack_client = SlackClient('')
+slack_client = SlackClient(os.environ.get("SLACK_SECRET"))
 
 #armed_pid = -1
 
