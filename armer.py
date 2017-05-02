@@ -45,7 +45,6 @@ def handle_command(command, channel):
     """
     response = "Not sure what you mean."
     arr = command.split()
-    print(arr)
     if arr[0] in COMMANDS:
         if command.startswith('temp'):
             humidity, temperature = Adafruit_DHT.read_retry(sensor, pin)
@@ -59,9 +58,6 @@ def handle_command(command, channel):
             armed_pid = subprocess.Popen(['python', 'armed.py', ''], shell=False)
             response = "Arming, will send images when motion is detected"
         elif command.startswith('disarm'):
-            if len(arr) > 1:
-                print(arr)
-                print(disarm_pin)            
             if len(arr) > 1 and int(arr[1]) == disarm_pin:
                 response = "Disarming"
                 global armed_pid
