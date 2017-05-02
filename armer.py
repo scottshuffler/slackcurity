@@ -2,6 +2,7 @@ import os
 import time
 import Adafruit_DHT
 import subprocess
+import requests
 from time import sleep
 from slackclient import SlackClient
 from picamera import PiCamera
@@ -21,6 +22,7 @@ refresh_token = os.environ.get("REFRESH_ID")
 bot_id = os.environ.get("BOT_ID")
 slack_secret = os.environ.get("SLACK_SECRET")
 disarm_pin = int(os.environ.get("DISARM_PIN"))
+cat_secret = os.environ.get("CAT_SECRET")
 AT_BOT = "<@" + bot_id + ">"
 
 # Set up imgue and slack clients
@@ -32,7 +34,7 @@ sensor = Adafruit_DHT.AM2302
 pin = 4
 
 # Valid commands
-COMMANDS = ['arm', 'disarm', 'temp', 'test', 'help']
+COMMANDS = ['arm', 'disarm', 'temp', 'test', 'help', 'kitten', 'cat']
 
 armed_pid = -1
 
@@ -81,7 +83,9 @@ def handle_command(command, channel):
             image = client.upload_from_path(filename, config=None, anon=False)
             response += " " + image.get('link')
             os.remove(filename)
-
+        elif command.startswith('kitten') or command.startswith('cat'):
+            r = requests.get('http://thecatapi.com/api/images/get?api='+cat_secret+'&format=src')
+            response = "A cat for you sir or madam: " + r.url
         else:
             response = "List of commands: arm, disarm, temp, test_cam"
     slack_client.api_call("chat.postMessage", channel=channel,
