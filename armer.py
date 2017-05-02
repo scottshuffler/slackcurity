@@ -34,7 +34,7 @@ sensor = Adafruit_DHT.AM2302
 pin = 4
 
 # Valid commands
-COMMANDS = ['arm', 'disarm', 'temp', 'test', 'help', 'kitten', 'cat']
+COMMANDS = ['arm', 'disarm', 'temp', 'test', 'help', 'kitten', 'cat', 'proud']
 
 armed_pid = -1
 
@@ -86,8 +86,10 @@ def handle_command(command, channel):
         elif command.startswith('kitten') or command.startswith('cat'):
             r = requests.get('http://thecatapi.com/api/images/get?api='+cat_secret+'&format=src')
             response = "A cat for you sir or madam: " + r.url
+        elif command.startswith('proud'):
+            response = "Thanks dad :)"
         else:
-            response = "List of commands: arm, disarm, temp, test_cam"
+            response = "List of commands: arm, disarm, temp, test, cat, kitten, proud"
     slack_client.api_call("chat.postMessage", channel=channel,
                           text=":robot_face: " + response, as_user=True, icon_emoji=':robot_face:')
 
