@@ -20,6 +20,7 @@ access_token = os.environ.get("ACCESS_TOKEN")
 refresh_token = os.environ.get("REFRESH_ID")
 bot_id = os.environ.get("BOT_ID")
 slack_secret = os.environ.get("SLACK_SECRET")
+disarm_pin = int(os.environ.get("DISARM_PIN"))
 AT_BOT = "<@" + bot_id + ">"
 
 # Set up imgue and slack clients
@@ -42,7 +43,9 @@ def handle_command(command, channel):
         returns back what it needs for clarification.
     """
     response = "Not sure what you mean."
-    if command in COMMANDS:
+    arr = command.split()
+    print(arr)
+    if arr[0] in COMMANDS:
         if command.startswith('temp'):
             humidity, temperature = Adafruit_DHT.read_retry(sensor, pin)
             temperature = ((temperature * 1.8) + 32)
@@ -55,9 +58,19 @@ def handle_command(command, channel):
             armed_pid = subprocess.Popen(['python', 'armed.py', ''], shell=False)
             response = "Arming, will send images when motion is detected"
         elif command.startswith('disarm'):
-            response = "Disarming"
-            global armed_pid
-            armed_pid.terminate()
+            if len(arr) > 1:
+                print(arr)
+                print(disarm_pin)            
+            if len(arr) > 1 and int(arr[1]) == disarm_pin:
+                response = "Disarming"
+                global armed_pid
+                if armed_pid is -1:
+                    response = "System not armed"
+                else:
+                    armed_pid.terminate()
+                    armed_pid=-1
+            else:
+                response = "Pin incorrect, try again"
         elif command.startswith('test'):
             response = "Taking a test picture"
             date = time.strftime("%H-%M-%S")
