@@ -1,6 +1,7 @@
 import os
 import time
 import RPi.GPIO as GPIO
+import sys
 from time import sleep
 from slackclient import SlackClient
 from picamera import PiCamera
@@ -32,6 +33,8 @@ GPIO.setup(PIR_PIN, GPIO.IN)
 # Create slack client
 slack_client = SlackClient(slack_secret)
 
+channel = sys.argv[1]
+
 # Forever loop, if motion detected it takes a picture, uploads it to imgur and sends the image link to slack chat
 if __name__ == "__main__":
     READ_WEBSOCKET_DELAY = 1
@@ -50,8 +53,8 @@ if __name__ == "__main__":
                     image = client.upload_from_path(filename, config=None, anon=False)
                     response = image.get('link')
                     os.remove(filename)
-                    slack_client.api_call("chat.postMessage", channel="#general",
-                                          text="MOTION DETECTED " + response + "", username='slackarm',
+                    slack_client.api_call("chat.postMessage", channel=channel,
+                                          text="MOTION DETECTED " + response + "",as_user=True,
                                           icon_emoji=':robot_face:')
                 finally:
                     time.sleep(1)

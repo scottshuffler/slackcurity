@@ -34,7 +34,7 @@ sensor = Adafruit_DHT.AM2302
 pin = 4
 
 # Valid commands
-COMMANDS = ['arm', 'disarm', 'temp', 'test', 'help', 'kitten', 'cat', 'proud']
+COMMANDS = ['arm', 'disarm', 'temp', 'test', 'help', 'kitten', 'cat', 'proud', 'thanks']
 
 armed_pid = -1
 
@@ -57,7 +57,7 @@ def handle_command(command, channel):
                 print('Failed to get reading. Try again!')
         elif command.startswith('arm'):
             global armed_pid
-            armed_pid = subprocess.Popen(['python', 'armed.py', ''], shell=False)
+            armed_pid = subprocess.Popen(['python', 'armed.py', channel], shell=False)
             response = "Arming, will send images when motion is detected"
         elif command.startswith('disarm'):
             if len(arr) > 1 and int(arr[1]) == disarm_pin:
@@ -84,10 +84,15 @@ def handle_command(command, channel):
             response += " " + image.get('link')
             os.remove(filename)
         elif command.startswith('kitten') or command.startswith('cat'):
-            r = requests.get('http://thecatapi.com/api/images/get?api='+cat_secret+'&format=src')
-            response = "A cat for you sir or madam: " + r.url
+            try:
+                r = requests.get('http://thecatapi.com/api/images/get?api='+cat_secret+'&format=src')
+                response = "A cat for you sir or madam: " + r.url
+            except Exception:
+                response = "I couldn't get a cat :( try again"
         elif command.startswith('proud'):
             response = "Thanks dad :)"
+        elif command.startswith('thanks'):
+            response = "No problem! :+1:"
         else:
             response = "List of commands: arm, disarm, temp, test, cat, kitten, proud"
     slack_client.api_call("chat.postMessage", channel=channel,
